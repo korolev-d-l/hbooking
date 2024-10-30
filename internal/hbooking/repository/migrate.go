@@ -8,6 +8,7 @@ import (
 func (r *Repository) Migrate() error {
 	query := `
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 CREATE TABLE IF NOT EXISTS workshop_bookings 
 (
@@ -16,14 +17,15 @@ CREATE TABLE IF NOT EXISTS workshop_bookings
     begin_at        TIMESTAMP                       NOT NULL,
     end_at          TIMESTAMP                       NOT NULL,
     client_id 	 	TEXT                            NOT NULL,
-    client_timezone TEXT                            NOT NULL
+    client_timezone TEXT                            NOT NULL,
+	CONSTRAINT workshop_bookings_workshop_id_begin_at_end_at_overlap 
+	    EXCLUDE USING gist (
+        workshop_id WITH =,
+        tsrange(begin_at, end_at) WITH &&)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_workshop_bookings_booking_id
 	ON workshop_bookings (booking_id);
-
-CREATE INDEX IF NOT EXISTS idx_workshop_bookings
-	ON workshop_bookings (workshop_id, begin_at, end_at);
 
 CREATE TABLE IF NOT EXISTS workshop_schedules
 (

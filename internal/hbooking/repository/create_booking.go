@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgconn"
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4"
 
@@ -59,7 +60,9 @@ type WorkshopSchedule struct {
 func (r *Repository) CreateBooking(ctx context.Context, booking *domain.Booking) (*domain.Booking, error) {
 	var err error
 
-	tx, err := r.pool.Begin(ctx)
+	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{
+		IsoLevel: pgx.ReadCommitted,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
@@ -133,6 +136,11 @@ func (r *Repository) CreateBooking(ctx context.Context, booking *domain.Booking)
 		pgBooking.ClientTimezone,
 	).Scan(&pgBooking.ID)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.ConstraintName == "workshop_bookings_workshop_id_begin_at_end_at_overlap" {
+			return nil, domain.ErrBookingOverlap
+		}
+
 		return nil, fmt.Errorf("failed to insert booking: %w", err)
 	}
 
