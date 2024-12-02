@@ -20,7 +20,6 @@ func (r *Repository) ListBookings(ctx context.Context, workshopID int64) ([]*dom
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
 	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[Booking])
 	if err != nil {
