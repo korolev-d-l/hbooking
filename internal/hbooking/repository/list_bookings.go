@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/spatecon/hbooking/internal/hbooking/domain"
 )
 
@@ -20,31 +22,18 @@ func (r *Repository) ListBookings(ctx context.Context, workshopID int64) ([]*dom
 	}
 	defer rows.Close()
 
-	bookings := make([]*domain.Booking, 0)
-	for rows.Next() {
-		var (
-			b       Booking
-			booking *domain.Booking
-		)
-		err = rows.Scan(
-			&b.ID,
-			&b.WorkshopID,
-			&b.ClientID,
-			&b.BeginAt,
-			&b.EndAt,
-			&b.ClientTimezone,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan booking: %w", err)
-		}
+	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[Booking])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect rows booking: %w", err)
+	}
 
-		booking, err = ConvertFromPGBooking(&b)
+	bookingsDomain := make([]*domain.Booking, len(bookings))
+	for i, b := range bookings {
+		bookingsDomain[i], err = ConvertFromPGBooking(&b)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert booking: %w", err)
 		}
-
-		bookings = append(bookings, booking)
 	}
 
-	return bookings, nil
+	return bookingsDomain, nil
 }

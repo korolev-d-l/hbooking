@@ -9,13 +9,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/spatecon/hbooking/internal/hbooking/domain"
 )
 
 type Booking struct {
-	ID             uuid.UUID
+	BookingID      uuid.UUID
 	WorkshopID     int64
 	ClientID       string
 	BeginAt        pgtype.Timestamp
@@ -25,7 +25,7 @@ type Booking struct {
 
 func ConvertToPGBooking(b *domain.Booking) *Booking {
 	return &Booking{
-		ID:             b.ID,
+		BookingID:      b.ID,
 		WorkshopID:     b.WorkshopID,
 		ClientID:       b.ClientID,
 		BeginAt:        pgtype.Timestamp{Time: b.BeginAt.UTC(), Status: pgtype.Present},
@@ -41,7 +41,7 @@ func ConvertFromPGBooking(b *Booking) (*domain.Booking, error) {
 	}
 
 	return &domain.Booking{
-		ID:             b.ID,
+		ID:             b.BookingID,
 		WorkshopID:     b.WorkshopID,
 		ClientID:       b.ClientID,
 		BeginAt:        b.BeginAt.Time.In(tz),
@@ -134,7 +134,7 @@ func (r *Repository) CreateBooking(ctx context.Context, booking *domain.Booking)
 		pgBooking.EndAt,
 		pgBooking.ClientID,
 		pgBooking.ClientTimezone,
-	).Scan(&pgBooking.ID)
+	).Scan(&pgBooking.BookingID)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.ConstraintName == "workshop_bookings_workshop_id_begin_at_end_at_overlap" {
