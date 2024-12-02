@@ -2,27 +2,17 @@ package app
 
 import (
 	"context"
-	"os"
-	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 func (a *App) initDBConn() error {
-	databaseURL := os.Getenv("DATABASE_URL")
-
-	config, err := pgxpool.ParseConfig(databaseURL)
+	cfg, err := pgxpool.ParseConfig(a.cfg.DB.URL)
 	if err != nil {
 		return err
 	}
 
-	config.MaxConns = 10
-	config.MaxConnIdleTime = 30 * time.Minute
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	db, err := pgxpool.ConnectConfig(ctx, config)
+	db, err := pgxpool.ConnectConfig(context.TODO(), cfg)
 	if err != nil {
 		return err
 	}

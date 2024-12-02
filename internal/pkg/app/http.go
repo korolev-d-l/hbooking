@@ -3,9 +3,8 @@ package app
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -23,7 +22,7 @@ func (a *App) initServer() error {
 
 	a.handlers = handlers.NewHandlers(a.logger, a.repository)
 
-	//gin.SetMode(gin.ReleaseMode)
+	gin.SetMode(a.cfg.HTTP.GinMode)
 	router := gin.Default()
 	router.POST("/api/v1/bookings/:workshop_id", a.handlers.CreateBooking)
 	router.GET("/api/v1/bookings/:workshop_id", a.handlers.ListBookings)
@@ -31,13 +30,17 @@ func (a *App) initServer() error {
 	a.router = router
 
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%s", os.Getenv("HTTP_PORT")),
-		Handler: router,
+		Addr:              fmt.Sprintf(":%s", a.cfg.HTTP.Server.Port),
+		Handler:           http.TimeoutHandler(router, a.cfg.HTTP.Server.HandlerTimeout, "Timeout"),
+		ErrorLog:          slog.NewLogLogger(a.logger.Handler(), slog.LevelError),
+		ReadHeaderTimeout: a.cfg.HTTP.Server.ReadHeaderTimeout,
+		ReadTimeout:       a.cfg.HTTP.Server.ReadTimeout,
+		IdleTimeout:       a.cfg.HTTP.Server.IdleTimeout,
 	}
 
 	a.http = server
 	a.closers = append(a.closers, func() error {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), a.cfg.HTTP.Server.ShutdownTimeout)
 		defer cancel()
 
 		return a.http.Shutdown(ctx)
