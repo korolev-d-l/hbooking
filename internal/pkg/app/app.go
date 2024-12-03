@@ -16,6 +16,8 @@ import (
 )
 
 type App struct {
+	cfg *config
+
 	logger *slog.Logger
 
 	dbConn     *pgxpool.Pool
@@ -34,7 +36,7 @@ func NewApp() (*App, error) {
 
 	app := &App{}
 	// - config
-	// TODO: add config
+	app.cfg = newConfig()
 	// - logger
 	app.initLogger()
 	// - db
