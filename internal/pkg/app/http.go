@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -47,4 +48,11 @@ func (a *App) initServer() error {
 	})
 
 	return nil
+}
+
+func (a *App) listenServer() {
+	err := a.http.ListenAndServe()
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		a.logger.Error("http server failed", "error", err)
+	}
 }

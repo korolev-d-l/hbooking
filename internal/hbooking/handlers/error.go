@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"fmt"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -29,7 +29,7 @@ func ValidationError(err error) serviceError {
 }
 
 func ValidationErrorStr(err string) serviceError {
-	return ValidationError(fmt.Errorf(err))
+	return ValidationError(errors.New(err))
 }
 
 func ValidationFailed(c *gin.Context, err error) bool {
