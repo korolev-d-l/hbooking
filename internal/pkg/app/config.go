@@ -5,9 +5,9 @@ type config struct {
 	DB   *configDB
 }
 
-func newConfig() *config {
+func (a *App) initConfig() {
 	c := new(config)
 	c.HTTP = newHTTPConfig()
 	c.DB = newDBConfig()
-	return c
+	a.cfg = c
 }

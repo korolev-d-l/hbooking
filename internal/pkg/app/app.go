@@ -36,7 +36,7 @@ func NewApp() (*App, error) {
 
 	app := &App{}
 	// - config
-	app.cfg = newConfig()
+	app.initConfig()
 	// - logger
 	app.initLogger()
 	// - db
